@@ -1,4 +1,4 @@
-package com.noxag.util;
+package com.noxag.newnox.pot.util;
 
 public class UserInterfaceUtil {
 
