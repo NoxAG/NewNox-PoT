@@ -56,7 +56,7 @@ public class PDFView extends JPanel {
     @Override
     public void paint(Graphics g) {
         super.paint(g);
-        if (scaledPDFImages != null || !scaledPDFImages.isEmpty()) {
+        if (scaledPDFImages != null) {
             int posY = 0;
             int posX = 0;
             for (Image scaledPDFImage : scaledPDFImages) {

@@ -96,7 +96,6 @@ public final class AddAnnotation {
             PDAnnotationTextMarkup txtMark = new PDAnnotationTextMarkup(PDAnnotationTextMarkup.SUB_TYPE_HIGHLIGHT);
             txtMark.setColor(blue);
             txtMark.setConstantOpacity((float) 0.2); // 20% transparent
-
             // Set the rectangle containing the markup
             float textWidth = font.getStringWidth("PDFBox") / 1000 * 18;
             PDRectangle position = new PDRectangle();
@@ -241,7 +240,7 @@ public final class AddAnnotation {
             showPageNo(document, page3, "Page 3");
 
             // save the PDF
-            document.save("C:/Users/IBM_ADMIN/Documents/annotedPDF.pdf");
+            document.save("C:/Users/IBM_ADMIN/Documents/annotedPDFGenerated.pdf");
 
         }
     }
