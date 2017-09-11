@@ -10,7 +10,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -22,10 +22,16 @@ import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.color.PDColor;
+import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceRGB;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationTextMarkup;
 
 import com.noxag.newnox.pot.userinterface.pdfmodule.PDFPageDrawer;
 import com.noxag.newnox.pot.userinterface.pdfmodule.PDFView;
+import com.noxag.newnox.pot.util.PDFUtil;
+import com.noxag.newnox.pot.util.TextPositionSequence;
 
 public class MainWindow extends JFrame {
 
@@ -100,9 +106,33 @@ public class MainWindow extends JFrame {
     private void searchButtonAction(ActionEvent e) {
         String searchText = this.searchField.getText();
         if (this.pdfDocument != null) {
-            Iterator<PDPage> pageIterator = pdfDocument.getPages().iterator();
-            while (pageIterator.hasNext()) {
-                PDPage page = pageIterator.next();
+            try {
+                for (int pageNum = 1; pageNum < this.pdfDocument.getNumberOfPages(); pageNum++) {
+                    List<PDAnnotation> pageAnnotations = this.pdfDocument.getPage(pageNum - 1).getAnnotations();
+
+                    for (TextPositionSequence finding : PDFUtil.findSubwords(this.pdfDocument, pageNum, searchText)) {
+
+                        // Now add the markup annotation, a highlight to PDFBox
+                        // text
+                        PDAnnotationTextMarkup txtMark = new PDAnnotationTextMarkup(
+                                PDAnnotationTextMarkup.SUB_TYPE_HIGHLIGHT);
+                        txtMark.setColor(new PDColor(new float[] { 1, 1, 0 }, PDDeviceRGB.INSTANCE));
+                        txtMark.setConstantOpacity((float) 0.5);
+                        txtMark.setRectangle(new PDRectangle(finding.getX(), finding.getY(), finding.getWidth(),
+                                finding.getHeight()));
+                        pageAnnotations.add(txtMark);
+
+                        System.out.println("txtMark = " + txtMark.getRectangle().getLowerLeftX());
+                        System.out.println("txtMark = " + txtMark.getRectangle().getLowerLeftY());
+                        System.out.println("txtMark = " + txtMark.getRectangle().getUpperRightX());
+                        System.out.println("txtMark = " + txtMark.getRectangle().getUpperRightY());
+                    }
+                }
+
+                initiatePDFView();
+
+            } catch (IOException e1) {
+                e1.printStackTrace();
             }
         } else {
             JOptionPane.showMessageDialog(this, "You need to open a PDF before you can search for something");
@@ -133,7 +163,7 @@ public class MainWindow extends JFrame {
     }
 
     private void updatePDFView() {
-        this.pdfViewPanel.setScaleFactor(0.8);
+        this.pdfViewPanel.setScaleFactor(0.4);
         this.pdfViewPanel.rescale();
 
         this.pdfScrollPane.getViewport().revalidate();
