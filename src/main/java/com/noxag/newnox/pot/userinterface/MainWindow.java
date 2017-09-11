@@ -61,6 +61,7 @@ public class MainWindow extends JFrame {
         searchField = new JTextField("");
         searchField.setColumns(20);
         searchBar = new JPanel();
+
         searchBar.setLayout(new FlowLayout());
         searchBar.add(searchField);
         searchBar.add(searchButton);
@@ -74,12 +75,15 @@ public class MainWindow extends JFrame {
         pdfScrollPane = new JScrollPane(pdfViewPanel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
+        pdfScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
         this.add(pdfScrollPane, BorderLayout.CENTER);
         this.add(openFileButton, BorderLayout.PAGE_START);
         this.add(searchBar, BorderLayout.PAGE_END);
 
         openFileButton.addActionListener(this::openFileChooser);
         searchButton.addActionListener(this::searchButtonAction);
+        searchField.addActionListener(this::searchButtonAction);
 
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.addWindowListener(new java.awt.event.WindowAdapter() {
@@ -113,7 +117,6 @@ public class MainWindow extends JFrame {
                     for (TextPositionSequence finding : PDFUtil.findSubwords(this.pdfDocument, pageNum, searchText)) {
 
                         // Now add the markup annotation, a highlight to PDFBox
-                        // text
                         PDAnnotationTextMarkup txtMark = new PDAnnotationTextMarkup(
                                 PDAnnotationTextMarkup.SUB_TYPE_HIGHLIGHT);
                         txtMark.setColor(new PDColor(new float[] { 1, 1, 0 }, PDDeviceRGB.INSTANCE));
