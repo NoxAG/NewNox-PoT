@@ -11,6 +11,8 @@ import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -22,11 +24,7 @@ import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.graphics.color.PDColor;
-import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceRGB;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
-import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationTextMarkup;
 
 import com.noxag.newnox.pot.userinterface.pdfmodule.PDFPageDrawer;
 import com.noxag.newnox.pot.userinterface.pdfmodule.PDFView;
@@ -34,16 +32,18 @@ import com.noxag.newnox.pot.util.PDFUtil;
 import com.noxag.newnox.pot.util.TextPositionSequence;
 
 public class MainWindow extends JFrame {
+    private static final Logger LOGGER = Logger.getLogger(MainWindow.class.getName());
 
     private static final long serialVersionUID = -8163834508651398652L;
+
     private JButton openFileButton;
     private JButton searchButton;
     private JPanel searchBar;
     private JTextField searchField;
     private PDFView pdfViewPanel;
     private JFileChooser fileChooser;
-    private PDDocument pdfDocument;
     private JScrollPane pdfScrollPane;
+    private transient PDDocument pdfDocument;
 
     public MainWindow() {
         init();
@@ -92,15 +92,16 @@ public class MainWindow extends JFrame {
                 try {
                     pdfDocument.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    LOGGER.log(Level.WARNING, "PDF document could not be closed properly", e);
                 } finally {
-                    System.out.println("closing");
+                    LOGGER.log(Level.INFO, "PDF document has been closed");
                     System.exit(0);
                 }
             }
         });
 
         pdfScrollPane.addComponentListener(new ComponentAdapter() {
+            @Override
             public void componentResized(ComponentEvent evt) {
                 updatePDFView();
             }
@@ -108,37 +109,33 @@ public class MainWindow extends JFrame {
     }
 
     private void searchButtonAction(ActionEvent e) {
+        clearDocumentFromAnnotations(this.pdfDocument);
+
         String searchText = this.searchField.getText();
         if (this.pdfDocument != null) {
             try {
-                for (int pageNum = 1; pageNum < this.pdfDocument.getNumberOfPages(); pageNum++) {
-                    List<PDAnnotation> pageAnnotations = this.pdfDocument.getPage(pageNum - 1).getAnnotations();
-
-                    for (TextPositionSequence finding : PDFUtil.findSubwords(this.pdfDocument, pageNum, searchText)) {
-
-                        // Now add the markup annotation, a highlight to PDFBox
-                        PDAnnotationTextMarkup txtMark = new PDAnnotationTextMarkup(
-                                PDAnnotationTextMarkup.SUB_TYPE_HIGHLIGHT);
-                        txtMark.setColor(new PDColor(new float[] { 1, 1, 0 }, PDDeviceRGB.INSTANCE));
-                        txtMark.setConstantOpacity((float) 0.5);
-                        txtMark.setRectangle(new PDRectangle(finding.getX(), finding.getY(), finding.getWidth(),
-                                finding.getHeight()));
-                        pageAnnotations.add(txtMark);
-
-                        System.out.println("txtMark = " + txtMark.getRectangle().getLowerLeftX());
-                        System.out.println("txtMark = " + txtMark.getRectangle().getLowerLeftY());
-                        System.out.println("txtMark = " + txtMark.getRectangle().getUpperRightX());
-                        System.out.println("txtMark = " + txtMark.getRectangle().getUpperRightY());
-                    }
+                for (TextPositionSequence finding : PDFUtil.findInDocument(this.pdfDocument, searchText,
+                        PDFUtil::findWordOnPageIgnoreCase)) {
+                    PDFUtil.addTextMarkupAnnotation(this.pdfDocument, finding);
                 }
-
-                initiatePDFView();
-
-            } catch (IOException e1) {
-                e1.printStackTrace();
+            } catch (IOException ioE) {
+                LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
             }
+            initiatePDFView();
+
         } else {
             JOptionPane.showMessageDialog(this, "You need to open a PDF before you can search for something");
+        }
+    }
+
+    private void clearDocumentFromAnnotations(PDDocument doc) {
+        try {
+            for (int pageNum = 1; pageNum < this.pdfDocument.getNumberOfPages(); pageNum++) {
+                List<PDAnnotation> pageAnnotations = doc.getPage(pageNum - 1).getAnnotations();
+                pageAnnotations.clear();
+            }
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "PDF could not acces annotations", e);
         }
     }
 
@@ -146,7 +143,7 @@ public class MainWindow extends JFrame {
         int returnState = fileChooser.showOpenDialog(null);
 
         if (returnState == JFileChooser.APPROVE_OPTION) {
-            System.out.println("Die zu öffnende Datei ist: " + fileChooser.getSelectedFile().getAbsolutePath());
+            LOGGER.log(Level.INFO, "New Filepath has been chosen: " + fileChooser.getSelectedFile().getAbsolutePath());
             try {
                 if (pdfDocument != null) {
                     pdfDocument.close();
@@ -154,14 +151,13 @@ public class MainWindow extends JFrame {
                 pdfDocument = PDDocument.load(new File(fileChooser.getSelectedFile().getAbsolutePath()));
                 initiatePDFView();
             } catch (IOException e1) {
-                e1.printStackTrace();
+                LOGGER.log(Level.WARNING, "PDF document could not be loaded", e1);
             }
         }
     }
 
     private void initiatePDFView() {
         this.pdfViewPanel.setPDFImage(PDFPageDrawer.getAllPagesFromPDFAsImage(this.pdfDocument));
-        // this.pdfViewPanel.addPDFImage(CustomPageDrawer.getBufferedImageByPDF(this.pdfDocument));
         this.updatePDFView();
     }
 
@@ -186,8 +182,8 @@ public class MainWindow extends JFrame {
             double relativeHeight) {
         int width = (int) (dimension.getWidth() * relativeWidth);
         int height = (int) (dimension.getHeight() * relativeHeight);
-        int posX = (int) ((dimension.getWidth() * relativeX) - width / 2);
-        int posY = (int) ((dimension.getHeight() * relativeY) - height / 2);
+        int posX = (int) ((dimension.getWidth() * relativeX) - (double) width / 2);
+        int posY = (int) ((dimension.getHeight() * relativeY) - (double) height / 2);
 
         return new Rectangle(posX, posY, width, height);
     }
