@@ -26,7 +26,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 
-import com.noxag.newnox.pot.userinterface.pdfmodule.PDFPageDrawer;
+import com.noxag.newnox.pot.userinterface.pdfmodule.PDFPageRenderer;
 import com.noxag.newnox.pot.userinterface.pdfmodule.PDFView;
 import com.noxag.newnox.pot.util.PDFUtil;
 import com.noxag.newnox.pot.util.TextPositionSequence;
@@ -157,7 +157,8 @@ public class MainWindow extends JFrame {
     }
 
     private void initiatePDFView() {
-        this.pdfViewPanel.setPDFImage(PDFPageDrawer.getAllPagesFromPDFAsImage(this.pdfDocument));
+        this.pdfViewPanel.setPDFImage(PDFPageRenderer.getAllPagesFromPDFAsImage(this.pdfDocument));
+        this.pdfViewPanel.setOverlayImages(PDFPageRenderer.getTextHighlightingOverlayFromDocument(this.pdfDocument));
         this.updatePDFView();
     }
 

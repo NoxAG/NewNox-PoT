@@ -161,7 +161,7 @@ public class PDFUtil {
     private static PDAnnotation generateTextMarkupAnnotation(TextPositionSequence annotationPosition) {
         PDAnnotationTextMarkup txtMark = new PDAnnotationTextMarkup(PDAnnotationTextMarkup.SUB_TYPE_HIGHLIGHT);
         txtMark.setColor(new PDColor(new float[] { 1, 1, 0 }, PDDeviceRGB.INSTANCE));
-        txtMark.setConstantOpacity((float) 0.5);
+        txtMark.setConstantOpacity((float) 1);
         txtMark.setRectangle(new PDRectangle(annotationPosition.getX(), annotationPosition.getY(),
                 annotationPosition.getWidth(), annotationPosition.getHeight()));
         return txtMark;
