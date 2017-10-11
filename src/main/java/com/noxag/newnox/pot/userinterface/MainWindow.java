@@ -34,6 +34,7 @@ public class MainWindow extends JFrame {
     private static final long serialVersionUID = -8163834508651398652L;
 
     private JButton openFileButton;
+    private JButton searchButton;
     private JButton selectAllButton;
     private JButton selectContentPagesButton;
     private JPanel searchBar;
@@ -54,6 +55,7 @@ public class MainWindow extends JFrame {
         this.setLayout(new BorderLayout());
 
         openFileButton = new JButton("Open File");
+        searchButton = new JButton("Search");
         selectAllButton = new JButton("All Pages");
         selectContentPagesButton = new JButton("Content Pages");
 
@@ -63,6 +65,7 @@ public class MainWindow extends JFrame {
 
         searchBar.setLayout(new FlowLayout());
         searchBar.add(searchField);
+        searchBar.add(searchButton);
         searchBar.add(selectAllButton);
         searchBar.add(selectContentPagesButton);
 
@@ -84,6 +87,7 @@ public class MainWindow extends JFrame {
         openFileButton.addActionListener(this::openFileChooser);
         selectAllButton.addActionListener(this::selectAllButtonAction);
         selectContentPagesButton.addActionListener(this::selectContentPagesButtonAction);
+        searchButton.addActionListener(this::searchButtonAction);
 
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.addWindowListener(new java.awt.event.WindowAdapter() {
@@ -108,6 +112,24 @@ public class MainWindow extends JFrame {
         });
     }
 
+    private void searchButtonAction(ActionEvent e) {
+        PDFHighlighter.clearDocumentFromAnnotations(this.pdfDocument);
+
+        if (this.pdfDocument == null) {
+            JOptionPane.showMessageDialog(this, "You need to open a PDF before you can search for something");
+            return;
+        }
+
+        String searchTerm = searchField.getText();
+        try {
+            PDFHighlighter.highlight(this.pdfDocument, PDFTextExtractionUtil.getTextFindings(PDFTextExtractionUtil
+                    .findInDocument(this.pdfDocument, searchTerm, PDFTextExtractionUtil::findWordOnPageIgnoreCase)));
+        } catch (IOException ioE) {
+            LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
+        }
+        updatePDFView();
+    }
+
     private void selectContentPagesButtonAction(ActionEvent e) {
         PDFHighlighter.clearDocumentFromAnnotations(this.pdfDocument);
         if (this.pdfDocument == null) {
@@ -116,12 +138,12 @@ public class MainWindow extends JFrame {
         }
 
         try {
-            PDFHighlighter.highlight(this.pdfDocument,
-                    PDFTextExtractionUtil.getTextFindings(PDFTextExtractionUtil.getCompleteTextInDocument(this.pdfDocument)));
+            PDFHighlighter.highlight(this.pdfDocument, PDFTextExtractionUtil
+                    .getTextFindings(PDFTextExtractionUtil.getCompleteTextInDocument(this.pdfDocument)));
         } catch (IOException ioE) {
             LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
         }
-        initiatePDFView();
+        updatePDFView();
     }
 
     private void selectAllButtonAction(ActionEvent e) {
@@ -133,12 +155,12 @@ public class MainWindow extends JFrame {
         }
 
         try {
-            PDFHighlighter.highlight(this.pdfDocument,
-                    PDFTextExtractionUtil.getTextFindings(PDFTextExtractionUtil.getCompleteTextInDocument(this.pdfDocument)));
+            PDFHighlighter.highlight(this.pdfDocument, PDFTextExtractionUtil
+                    .getTextFindings(PDFTextExtractionUtil.getCompleteTextInDocument(this.pdfDocument)));
         } catch (IOException ioE) {
             LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
         }
-        initiatePDFView();
+        updatePDFView();
     }
 
     private void openFileChooser(ActionEvent e) {
@@ -160,11 +182,14 @@ public class MainWindow extends JFrame {
 
     private void initiatePDFView() {
         this.pdfViewPanel.setPDFImage(PDFPageRenderer.getAllPagesFromPDFAsImage(this.pdfDocument));
-        this.pdfViewPanel.setOverlayImages(PDFPageRenderer.getTextHighlightingOverlayFromDocument(this.pdfDocument));
         this.updatePDFView();
     }
 
     private void updatePDFView() {
+        if (this.pdfDocument != null) {
+            this.pdfViewPanel
+                    .setOverlayImages(PDFPageRenderer.getTextHighlightingOverlayFromDocument(this.pdfDocument));
+        }
         this.pdfViewPanel.setScaleFactor(0.4);
         this.pdfViewPanel.rescale();
 

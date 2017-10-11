@@ -58,8 +58,10 @@ public class PDFView extends JPanel {
             this.setPreferredSize(new Dimension(newWidth, newHeight));
             this.repaint();
         }
-        if (originalScalePDFImages != null) {
-            scaledPDFImages = new ArrayList<>();
+        if (originalScalePDFImages != null || !originalScalePDFImages.isEmpty()) {
+            if (scaledPDFImages == null || scaledPDFImages.isEmpty()
+                    || originalScalePDFImages.get(0).getWidth(null) != scaledPDFImages.get(0).getWidth(null))
+                scaledPDFImages = new ArrayList<>();
 
             int newWidth = (int) (this.getParent().getWidth() * this.getScaleFactor());
             int newHeight = 0;
@@ -68,7 +70,7 @@ public class PDFView extends JPanel {
                 if (originalScalePDFImage == null) {
                     continue;
                 }
-                Image scaledPDFImage = originalScalePDFImage.getScaledInstance(newWidth, -1, Image.SCALE_FAST);
+                Image scaledPDFImage = originalScalePDFImage.getScaledInstance(newWidth, -1, Image.SCALE_SMOOTH);
                 pageHeight = scaledPDFImage.getHeight(null);
                 newHeight += pageHeight + pageHeight * PAGE_GAP_FACTOR;
                 scaledPDFImages.add(scaledPDFImage);
