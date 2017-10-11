@@ -10,7 +10,6 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,12 +23,10 @@ import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 
 import com.noxag.newnox.pot.userinterface.pdfmodule.PDFPageRenderer;
-import com.noxag.newnox.pot.userinterface.pdfmodule.PDFView;
+import com.noxag.newnox.pot.util.PDFHighlighter;
 import com.noxag.newnox.pot.util.PDFUtil;
-import com.noxag.newnox.pot.util.TextPositionSequence;
 
 public class MainWindow extends JFrame {
     private static final Logger LOGGER = Logger.getLogger(MainWindow.class.getName());
@@ -109,15 +106,13 @@ public class MainWindow extends JFrame {
     }
 
     private void searchButtonAction(ActionEvent e) {
-        clearDocumentFromAnnotations(this.pdfDocument);
+        PDFHighlighter.clearDocumentFromAnnotations(this.pdfDocument);
 
-        String searchText = this.searchField.getText();
         if (this.pdfDocument != null) {
             try {
-                for (TextPositionSequence finding : PDFUtil.findInDocument(this.pdfDocument, searchText,
-                        PDFUtil::findWordOnPageIgnoreCase)) {
-                    PDFUtil.addTextMarkupAnnotation(this.pdfDocument, finding);
-                }
+                PDFHighlighter.highlight(this.pdfDocument,
+                        PDFUtil.getTextFindings(PDFUtil.getCompleteTextInDocument(this.pdfDocument)));
+
             } catch (IOException ioE) {
                 LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
             }
@@ -125,17 +120,6 @@ public class MainWindow extends JFrame {
 
         } else {
             JOptionPane.showMessageDialog(this, "You need to open a PDF before you can search for something");
-        }
-    }
-
-    private void clearDocumentFromAnnotations(PDDocument doc) {
-        try {
-            for (int pageNum = 1; pageNum < this.pdfDocument.getNumberOfPages(); pageNum++) {
-                List<PDAnnotation> pageAnnotations = doc.getPage(pageNum - 1).getAnnotations();
-                pageAnnotations.clear();
-            }
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "PDF could not acces annotations", e);
         }
     }
 

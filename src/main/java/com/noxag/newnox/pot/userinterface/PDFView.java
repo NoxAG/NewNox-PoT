@@ -1,4 +1,4 @@
-package com.noxag.newnox.pot.userinterface.pdfmodule;
+package com.noxag.newnox.pot.userinterface;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -73,10 +73,7 @@ public class PDFView extends JPanel {
                 newHeight += pageHeight + pageHeight * PAGE_GAP_FACTOR;
                 scaledPDFImages.add(scaledPDFImage);
             }
-            // last page doesn't need a gap: undo last step
-            newHeight -= pageHeight * PAGE_GAP_FACTOR;
-            this.setPreferredSize(new Dimension(newWidth, newHeight));
-            this.repaint();
+
         }
 
     }

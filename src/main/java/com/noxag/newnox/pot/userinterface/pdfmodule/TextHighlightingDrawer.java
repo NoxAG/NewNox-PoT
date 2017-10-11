@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationTextMarkup;
@@ -21,6 +22,13 @@ public class TextHighlightingDrawer extends PageDrawer {
 
     TextHighlightingDrawer(PageDrawerParameters parameters) throws IOException {
         super(parameters);
+    }
+
+    @Override
+    public void processPage(PDPage page) throws IOException {
+        // Don't process page content
+        // This way the page is left blank and the TextHighlightingDrawer
+        // becomes much faster
     }
 
     /**
@@ -37,14 +45,12 @@ public class TextHighlightingDrawer extends PageDrawer {
             Composite composite = graphics.getComposite();
             Shape clip = graphics.getClip();
 
-            clearPage(graphics);
             drawAnnotation(graphics, annotation);
 
             // restore
             graphics.setColor(color);
             graphics.setClip(clip);
             graphics.setComposite(composite);
-
         }
     }
 
@@ -64,15 +70,5 @@ public class TextHighlightingDrawer extends PageDrawer {
         }
 
         graphics.fill(bbox);
-    }
-
-    private void clearPage(Graphics2D graphics) {
-        graphics.setBackground(new Color(255, 255, 255, 0));
-        graphics.setColor(graphics.getBackground());
-        graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC));
-
-        // TODO: calculate correct width and height, this are fixed values!!!
-        graphics.clearRect(0, 0, 1200, 1200);
-
     }
 }

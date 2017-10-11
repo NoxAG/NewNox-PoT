@@ -1,4 +1,4 @@
-package com.noxag.newnox.pot.util;
+package com.noxag.newnox.pot.util.data;
 
 import java.util.List;
 
@@ -32,6 +32,14 @@ public class TextPositionSequence implements CharSequence {
         String text = textPosition.getUnicode();
         return text.charAt(0);
 
+    }
+
+    public String getText() {
+        String text = "";
+        for (int i = start; i <= end; i++) {
+            text += "" + charAt(i);
+        }
+        return text;
     }
 
     @Override
