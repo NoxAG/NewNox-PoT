@@ -26,7 +26,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 
 import com.noxag.newnox.pot.userinterface.pdfmodule.PDFPageRenderer;
 import com.noxag.newnox.pot.util.PDFHighlighter;
-import com.noxag.newnox.pot.util.PDFUtil;
+import com.noxag.newnox.pot.util.PDFTextExtractionUtil;
 
 public class MainWindow extends JFrame {
     private static final Logger LOGGER = Logger.getLogger(MainWindow.class.getName());
@@ -34,7 +34,8 @@ public class MainWindow extends JFrame {
     private static final long serialVersionUID = -8163834508651398652L;
 
     private JButton openFileButton;
-    private JButton searchButton;
+    private JButton selectAllButton;
+    private JButton selectContentPagesButton;
     private JPanel searchBar;
     private JTextField searchField;
     private PDFView pdfViewPanel;
@@ -53,7 +54,8 @@ public class MainWindow extends JFrame {
         this.setLayout(new BorderLayout());
 
         openFileButton = new JButton("Open File");
-        searchButton = new JButton("Find");
+        selectAllButton = new JButton("All Pages");
+        selectContentPagesButton = new JButton("Content Pages");
 
         searchField = new JTextField("");
         searchField.setColumns(20);
@@ -61,7 +63,8 @@ public class MainWindow extends JFrame {
 
         searchBar.setLayout(new FlowLayout());
         searchBar.add(searchField);
-        searchBar.add(searchButton);
+        searchBar.add(selectAllButton);
+        searchBar.add(selectContentPagesButton);
 
         fileChooser = new JFileChooser();
         fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
@@ -79,8 +82,8 @@ public class MainWindow extends JFrame {
         this.add(searchBar, BorderLayout.PAGE_END);
 
         openFileButton.addActionListener(this::openFileChooser);
-        searchButton.addActionListener(this::searchButtonAction);
-        searchField.addActionListener(this::searchButtonAction);
+        selectAllButton.addActionListener(this::selectAllButtonAction);
+        selectContentPagesButton.addActionListener(this::selectContentPagesButtonAction);
 
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.addWindowListener(new java.awt.event.WindowAdapter() {
@@ -105,22 +108,37 @@ public class MainWindow extends JFrame {
         });
     }
 
-    private void searchButtonAction(ActionEvent e) {
+    private void selectContentPagesButtonAction(ActionEvent e) {
+        PDFHighlighter.clearDocumentFromAnnotations(this.pdfDocument);
+        if (this.pdfDocument == null) {
+            JOptionPane.showMessageDialog(this, "You need to open a PDF before you can search for something");
+            return;
+        }
+
+        try {
+            PDFHighlighter.highlight(this.pdfDocument,
+                    PDFTextExtractionUtil.getTextFindings(PDFTextExtractionUtil.getCompleteTextInDocument(this.pdfDocument)));
+        } catch (IOException ioE) {
+            LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
+        }
+        initiatePDFView();
+    }
+
+    private void selectAllButtonAction(ActionEvent e) {
         PDFHighlighter.clearDocumentFromAnnotations(this.pdfDocument);
 
-        if (this.pdfDocument != null) {
-            try {
-                PDFHighlighter.highlight(this.pdfDocument,
-                        PDFUtil.getTextFindings(PDFUtil.getCompleteTextInDocument(this.pdfDocument)));
-
-            } catch (IOException ioE) {
-                LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
-            }
-            initiatePDFView();
-
-        } else {
+        if (this.pdfDocument == null) {
             JOptionPane.showMessageDialog(this, "You need to open a PDF before you can search for something");
+            return;
         }
+
+        try {
+            PDFHighlighter.highlight(this.pdfDocument,
+                    PDFTextExtractionUtil.getTextFindings(PDFTextExtractionUtil.getCompleteTextInDocument(this.pdfDocument)));
+        } catch (IOException ioE) {
+            LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
+        }
+        initiatePDFView();
     }
 
     private void openFileChooser(ActionEvent e) {

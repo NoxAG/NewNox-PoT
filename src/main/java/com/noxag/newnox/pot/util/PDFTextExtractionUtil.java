@@ -12,9 +12,9 @@ import org.apache.pdfbox.text.TextPosition;
 import com.noxag.newnox.pot.util.data.TextFinding;
 import com.noxag.newnox.pot.util.data.TextPositionSequence;
 
-public class PDFUtil {
+public class PDFTextExtractionUtil {
 
-    private PDFUtil() {
+    private PDFTextExtractionUtil() {
         super();
     }
 
@@ -84,7 +84,7 @@ public class PDFUtil {
             throws IOException {
 
         final List<TextPositionSequence> hits = new ArrayList<>();
-        System.out.println(searchTerm);
+
         PDFTextStripper stripper = new PDFTextStripper() {
             @Override
             protected void writeString(String text, List<TextPosition> textPositions) throws IOException {
@@ -100,7 +100,6 @@ public class PDFUtil {
                 super.writeString(text, textPositions);
             }
         };
-
         runTextStripper(stripper, document, page);
         return hits;
     }
@@ -154,6 +153,7 @@ public class PDFUtil {
                 super.writeString(text, textPositions);
             }
         };
+
         runTextStripper(stripper, document, page);
         return hits;
     }
