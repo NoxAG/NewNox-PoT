@@ -36,10 +36,7 @@ public class TextHighlightingDrawer extends PageDrawer {
      */
     @Override
     public void showAnnotation(PDAnnotation annotation) throws IOException {
-        // TODO: Add support for more SUB_Types !
-        if (annotation instanceof PDAnnotationTextMarkup
-                && annotation.getSubtype().equals(PDAnnotationTextMarkup.SUB_TYPE_HIGHLIGHT)) {
-
+        if (annotation instanceof PDAnnotationTextMarkup) {
             Graphics2D graphics = getGraphics();
             Color color = graphics.getColor();
             Composite composite = graphics.getComposite();
@@ -54,10 +51,26 @@ public class TextHighlightingDrawer extends PageDrawer {
         }
     }
 
+    private Shape createTextMarkupShape(float x, float y, float width, float height, String subType) {
+        switch (subType) {
+        case PDAnnotationTextMarkup.SUB_TYPE_UNDERLINE:
+            y -= height / 3;
+            height /= 4;
+            break;
+        case PDAnnotationTextMarkup.SUB_TYPE_STRIKEOUT:
+            float newHeight = height / 4;
+            y += height / 2 - newHeight;
+            height = newHeight;
+            break;
+        }
+        Shape bbox = new Rectangle2D.Float(x, y, width, height);
+        return bbox;
+    }
+
     private void drawAnnotation(Graphics2D graphics, PDAnnotation annotation) {
         PDRectangle annotationRect = annotation.getRectangle();
-        Shape bbox = new Rectangle2D.Float(annotationRect.getLowerLeftX(), annotationRect.getLowerLeftY(),
-                annotationRect.getWidth(), annotationRect.getHeight());
+        Shape textMarkupShape = createTextMarkupShape(annotationRect.getLowerLeftX(), annotationRect.getLowerLeftY(),
+                annotationRect.getWidth(), annotationRect.getHeight(), annotation.getSubtype());
 
         graphics.setClip(graphics.getDeviceConfiguration().getBounds());
         graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
@@ -69,6 +82,6 @@ public class TextHighlightingDrawer extends PageDrawer {
             LOGGER.log(Level.WARNING, "Color of Annotation could not be drawn", e);
         }
 
-        graphics.fill(bbox);
+        graphics.fill(textMarkupShape);
     }
 }

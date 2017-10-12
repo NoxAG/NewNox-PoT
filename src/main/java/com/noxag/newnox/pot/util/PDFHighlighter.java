@@ -34,8 +34,8 @@ public class PDFHighlighter {
      */
     public static void addTextMarkupAnnotation(PDDocument doc, TextPositionSequence annotationPosition)
             throws IOException {
-        addTextMarkupAnnotation(doc, annotationPosition, new PDColor(new float[] { 1, 1, 0 }, PDDeviceRGB.INSTANCE),
-                PDAnnotationTextMarkup.SUB_TYPE_HIGHLIGHT);
+        addTextMarkupAnnotation(doc, annotationPosition, new PDColor(new float[] { 1, 0, 0 }, PDDeviceRGB.INSTANCE),
+                PDAnnotationTextMarkup.SUB_TYPE_STRIKEOUT);
     }
 
     public static void addTextMarkupAnnotation(PDDocument doc, TextPositionSequence annotationPosition, PDColor color,
