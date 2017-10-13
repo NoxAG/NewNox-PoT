@@ -10,6 +10,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,7 +27,10 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 
 import com.noxag.newnox.pot.userinterface.pdfmodule.PDFPageRenderer;
 import com.noxag.newnox.pot.util.PDFHighlighter;
+import com.noxag.newnox.pot.util.PDFTextAnalyzerUtil;
 import com.noxag.newnox.pot.util.PDFTextExtractionUtil;
+import com.noxag.newnox.pot.util.data.PDFLine;
+import com.noxag.newnox.pot.util.data.PDFPage;
 
 public class MainWindow extends JFrame {
     private static final Logger LOGGER = Logger.getLogger(MainWindow.class.getName());
@@ -123,7 +127,7 @@ public class MainWindow extends JFrame {
         String searchTerm = searchField.getText();
         try {
             PDFHighlighter.highlight(this.pdfDocument, PDFTextExtractionUtil.getTextFindings(PDFTextExtractionUtil
-                    .findInDocument(this.pdfDocument, searchTerm, PDFTextExtractionUtil::findWordOnPageIgnoreCase)));
+                    .findWord(this.pdfDocument, searchTerm, PDFTextExtractionUtil::findCharSequence)));
         } catch (IOException ioE) {
             LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
         }
@@ -136,13 +140,15 @@ public class MainWindow extends JFrame {
             JOptionPane.showMessageDialog(this, "You need to open a PDF before you can search for something");
             return;
         }
-
         try {
-            PDFHighlighter.highlight(this.pdfDocument, PDFTextExtractionUtil
-                    .getTextFindings(PDFTextExtractionUtil.getCompleteTextInDocument(this.pdfDocument)));
+            List<PDFLine> lines = PDFTextAnalyzerUtil
+                    .reduceToLines(PDFTextExtractionUtil.getCompleteText(this.pdfDocument));
+            PDFHighlighter.highlight(this.pdfDocument,
+                    PDFTextExtractionUtil.getTextFindings(PDFTextAnalyzerUtil.reduceToTextPositions(lines)));
         } catch (IOException ioE) {
             LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
         }
+
         updatePDFView();
     }
 
@@ -155,8 +161,9 @@ public class MainWindow extends JFrame {
         }
 
         try {
-            PDFHighlighter.highlight(this.pdfDocument, PDFTextExtractionUtil
-                    .getTextFindings(PDFTextExtractionUtil.getCompleteTextInDocument(this.pdfDocument)));
+            List<PDFPage> pages = PDFTextExtractionUtil.getCompleteText(this.pdfDocument);
+            PDFHighlighter.highlight(this.pdfDocument,
+                    PDFTextExtractionUtil.getTextFindings(PDFTextAnalyzerUtil.reduceToWords(pages)));
         } catch (IOException ioE) {
             LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
         }

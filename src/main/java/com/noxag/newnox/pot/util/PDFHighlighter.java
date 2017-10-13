@@ -40,7 +40,8 @@ public class PDFHighlighter {
 
     public static void addTextMarkupAnnotation(PDDocument doc, TextPositionSequence annotationPosition, PDColor color,
             String subType) throws IOException {
-        doc.getPage(annotationPosition.getPageNum() - 1).getAnnotations()
+
+        doc.getPage(annotationPosition.getPageIndex() - 1).getAnnotations()
                 .add(generateTextMarkupAnnotation(annotationPosition, color, subType));
     }
 

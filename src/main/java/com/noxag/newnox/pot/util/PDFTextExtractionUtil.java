@@ -6,17 +6,16 @@ import java.util.List;
 import java.util.function.Function;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
 
+import com.noxag.newnox.pot.util.data.PDFLine;
+import com.noxag.newnox.pot.util.data.PDFPage;
 import com.noxag.newnox.pot.util.data.TextFinding;
 import com.noxag.newnox.pot.util.data.TextPositionSequence;
 
 public class PDFTextExtractionUtil {
-
-    private PDFTextExtractionUtil() {
-        super();
-    }
 
     /**
      * Searches through the whole document using the given finder function.
@@ -41,7 +40,7 @@ public class PDFTextExtractionUtil {
      * @returns a list with all occurrences of the given word in the whole
      *          document
      */
-    public static List<TextPositionSequence> findInDocument(PDDocument document, String searchTerm,
+    public static List<TextPositionSequence> findWord(PDDocument document, String searchTerm,
             com.noxag.newnox.pot.util.Function<PDDocument, Integer, String, List<TextPositionSequence>> finder)
             throws IOException {
         List<TextPositionSequence> allHits = new ArrayList<>();
@@ -52,24 +51,51 @@ public class PDFTextExtractionUtil {
         return allHits;
     }
 
-    public static List<TextPositionSequence> getCompleteTextInDocument(PDDocument document) throws IOException {
-        List<TextPositionSequence> allHits = new ArrayList<>();
-
+    public static List<PDFPage> getCompleteText(PDDocument document) throws IOException {
+        List<PDFPage> pages = new ArrayList<>();
         for (int pageNum = 1; pageNum <= document.getNumberOfPages(); pageNum++) {
-            allHits.addAll(getCompleteText(document, pageNum));
+            pages.add(getCompleteText(document, pageNum));
         }
-        return allHits;
+        return pages;
     }
 
-    public static List<TextPositionSequence> getCompleteText(PDDocument document, int page) throws IOException {
-        return findWordOnPage(document, page, e -> {
-            return 0;
-        });
+    public static PDFPage getCompleteText(PDDocument document, int pageIndex) throws IOException {
+        final PDFPage pdfPage = new PDFPage();
+
+        PDFTextStripper stripper = new PDFTextStripper() {
+            PDFLine line = new PDFLine();
+            float lastWordPosY = -1f;
+            float posYTolerance = 0.1f;
+
+            @Override
+            protected void writeString(String text, List<TextPosition> textPositions) throws IOException {
+                float currentWordPosY = textPositions.get(0).getYDirAdj();
+                if (lastWordPosY != -1 && isNextLine(lastWordPosY, currentWordPosY, posYTolerance)) {
+                    pdfPage.getLines().add(this.line);
+                    line = new PDFLine();
+                }
+
+                line.getWords().add(new TextPositionSequence(textPositions, pageIndex));
+                lastWordPosY = currentWordPosY;
+                super.writeString(text, textPositions);
+            }
+
+            protected void endPage(PDPage page) throws IOException {
+                pdfPage.getLines().add(this.line);
+            }
+        };
+
+        runTextStripper(stripper, document, pageIndex);
+        return pdfPage;
+    }
+
+    private static boolean isNextLine(float lastWordPosY, float currentWordPosY, float tolerance) {
+        return !(lastWordPosY <= (currentWordPosY + tolerance) && lastWordPosY >= (currentWordPosY - tolerance));
     }
 
     /**
      * Finds every occurrence of the given char sequence, even if the sequence
-     * is only one single part of a word in the document
+     * is only one part of a word in the document
      * 
      * @param document
      *            the document that is searched through
@@ -80,28 +106,27 @@ public class PDFTextExtractionUtil {
      * @return a list with all occurrences of the given searchTerm
      * @throws IOException
      */
-    public static List<TextPositionSequence> findSubwordsOnPage(PDDocument document, int page, String searchTerm)
+    public static List<TextPositionSequence> findCharSequence(PDDocument document, int page, String searchTerm)
             throws IOException {
 
-        final List<TextPositionSequence> hits = new ArrayList<>();
+        List<TextPositionSequence> line = new ArrayList<>();
 
         PDFTextStripper stripper = new PDFTextStripper() {
+
             @Override
             protected void writeString(String text, List<TextPosition> textPositions) throws IOException {
                 TextPositionSequence word = new TextPositionSequence(textPositions, page);
-                String string = word.toString();
-
                 int fromIndex = 0;
                 int index;
-                while ((index = string.indexOf(searchTerm, fromIndex)) > -1) {
-                    hits.add(word.subSequence(index, index + searchTerm.length() - 1));
+                while ((index = text.indexOf(searchTerm, fromIndex)) > -1) {
+                    line.add(word.subSequence(index, index + searchTerm.length() - 1));
                     fromIndex = index + 1;
                 }
                 super.writeString(text, textPositions);
             }
         };
         runTextStripper(stripper, document, page);
-        return hits;
+        return line;
     }
 
     /**
@@ -116,9 +141,9 @@ public class PDFTextExtractionUtil {
      * @return a list with all occurrences of the given word
      * @throws IOException
      */
-    public static List<TextPositionSequence> findWordOnPage(PDDocument document, int page, String searchTerm)
+    public static List<TextPositionSequence> findWord(PDDocument document, int page, String searchTerm)
             throws IOException {
-        return findWordOnPage(document, page, searchTerm::compareTo);
+        return findWord(document, page, searchTerm::compareTo);
     }
 
     /**
@@ -134,17 +159,16 @@ public class PDFTextExtractionUtil {
      * @return a list with all occurrences of the given word
      * @throws IOException
      */
-    public static List<TextPositionSequence> findWordOnPageIgnoreCase(PDDocument document, int page, String searchTerm)
+    public static List<TextPositionSequence> findWordIgnoreCase(PDDocument document, int page, String searchTerm)
             throws IOException {
-        return findWordOnPage(document, page, searchTerm::compareToIgnoreCase);
+        return findWord(document, page, searchTerm::compareToIgnoreCase);
     }
 
-    private static List<TextPositionSequence> findWordOnPage(PDDocument document, int page,
+    private static List<TextPositionSequence> findWord(PDDocument document, int page,
             Function<String, Integer> compareTo) throws IOException {
         final List<TextPositionSequence> hits = new ArrayList<>();
-        PDFTextStripper stripper;
 
-        stripper = new PDFTextStripper() {
+        PDFTextStripper stripper = new PDFTextStripper() {
             @Override
             protected void writeString(String text, List<TextPosition> textPositions) throws IOException {
                 if (compareTo.apply(text) == 0) {
