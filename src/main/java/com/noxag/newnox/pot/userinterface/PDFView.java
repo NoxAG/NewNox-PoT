@@ -25,7 +25,6 @@ public class PDFView extends JPanel {
     private double scaleFactor;
 
     private boolean showTextHighlight = true;
-    private boolean showComments = false;
 
     public PDFView() {
         this.setBackground(Color.LIGHT_GRAY);
@@ -125,14 +124,6 @@ public class PDFView extends JPanel {
 
     public boolean isTextHighlightShowing() {
         return this.showTextHighlight;
-    }
-
-    public boolean isCommentOverlayShowing() {
-        return this.showComments;
-    }
-
-    public void showCommentOverlay(boolean b) {
-        this.showComments = b;
     }
 
     public void showTextHighlightOverlay(boolean b) {

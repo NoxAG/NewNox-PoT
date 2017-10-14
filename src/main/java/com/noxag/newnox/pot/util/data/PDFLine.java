@@ -35,4 +35,9 @@ public class PDFLine {
         charPositions.add(charPos.get(charPos.size() - 1));
         return new TextPositionSequence(charPositions, words.get(0).getPageIndex());
     }
+
+    public static TextPositionSequence getSentenceTextPositionSequence(List<PDFLine> lines) {
+
+        return null;
+    }
 }

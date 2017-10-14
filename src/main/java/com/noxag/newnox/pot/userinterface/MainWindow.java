@@ -26,11 +26,11 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 
 import com.noxag.newnox.pot.userinterface.pdfmodule.PDFPageRenderer;
-import com.noxag.newnox.pot.util.PDFHighlighter;
 import com.noxag.newnox.pot.util.PDFTextAnalyzerUtil;
 import com.noxag.newnox.pot.util.PDFTextExtractionUtil;
+import com.noxag.newnox.pot.util.PDFTextMarker;
 import com.noxag.newnox.pot.util.data.PDFLine;
-import com.noxag.newnox.pot.util.data.PDFPage;
+import com.noxag.newnox.pot.util.data.TextPositionSequence;
 
 public class MainWindow extends JFrame {
     private static final Logger LOGGER = Logger.getLogger(MainWindow.class.getName());
@@ -117,7 +117,7 @@ public class MainWindow extends JFrame {
     }
 
     private void searchButtonAction(ActionEvent e) {
-        PDFHighlighter.clearDocumentFromAnnotations(this.pdfDocument);
+        PDFTextMarker.clearDocumentFromTextMarkups(this.pdfDocument);
 
         if (this.pdfDocument == null) {
             JOptionPane.showMessageDialog(this, "You need to open a PDF before you can search for something");
@@ -126,7 +126,7 @@ public class MainWindow extends JFrame {
 
         String searchTerm = searchField.getText();
         try {
-            PDFHighlighter.highlight(this.pdfDocument, PDFTextExtractionUtil.getTextFindings(PDFTextExtractionUtil
+            PDFTextMarker.addTextMarkups(this.pdfDocument, PDFTextExtractionUtil.getTextFindings(PDFTextExtractionUtil
                     .findWord(this.pdfDocument, searchTerm, PDFTextExtractionUtil::findCharSequence)));
         } catch (IOException ioE) {
             LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
@@ -135,7 +135,7 @@ public class MainWindow extends JFrame {
     }
 
     private void selectContentPagesButtonAction(ActionEvent e) {
-        PDFHighlighter.clearDocumentFromAnnotations(this.pdfDocument);
+        PDFTextMarker.clearDocumentFromTextMarkups(this.pdfDocument);
         if (this.pdfDocument == null) {
             JOptionPane.showMessageDialog(this, "You need to open a PDF before you can search for something");
             return;
@@ -143,7 +143,7 @@ public class MainWindow extends JFrame {
         try {
             List<PDFLine> lines = PDFTextAnalyzerUtil
                     .reduceToLines(PDFTextExtractionUtil.getCompleteText(this.pdfDocument));
-            PDFHighlighter.highlight(this.pdfDocument,
+            PDFTextMarker.addTextMarkups(this.pdfDocument,
                     PDFTextExtractionUtil.getTextFindings(PDFTextAnalyzerUtil.reduceToTextPositions(lines)));
         } catch (IOException ioE) {
             LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
@@ -153,7 +153,7 @@ public class MainWindow extends JFrame {
     }
 
     private void selectAllButtonAction(ActionEvent e) {
-        PDFHighlighter.clearDocumentFromAnnotations(this.pdfDocument);
+        PDFTextMarker.clearDocumentFromTextMarkups(this.pdfDocument);
 
         if (this.pdfDocument == null) {
             JOptionPane.showMessageDialog(this, "You need to open a PDF before you can search for something");
@@ -161,9 +161,9 @@ public class MainWindow extends JFrame {
         }
 
         try {
-            List<PDFPage> pages = PDFTextExtractionUtil.getCompleteText(this.pdfDocument);
-            PDFHighlighter.highlight(this.pdfDocument,
-                    PDFTextExtractionUtil.getTextFindings(PDFTextAnalyzerUtil.reduceToWords(pages)));
+            List<TextPositionSequence> words = PDFTextAnalyzerUtil
+                    .reduceToWords(PDFTextExtractionUtil.getCompleteText(this.pdfDocument));
+            PDFTextMarker.addTextMarkups(this.pdfDocument, PDFTextExtractionUtil.getTextFindings(words));
         } catch (IOException ioE) {
             LOGGER.log(Level.WARNING, "PDF Document could not be searched through", ioE);
         }

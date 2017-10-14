@@ -70,18 +70,23 @@ public class PDFTextExtractionUtil {
             @Override
             protected void writeString(String text, List<TextPosition> textPositions) throws IOException {
                 float currentWordPosY = textPositions.get(0).getYDirAdj();
-                if (lastWordPosY != -1 && isNextLine(lastWordPosY, currentWordPosY, posYTolerance)) {
-                    pdfPage.getLines().add(this.line);
+                if (isNextLine(lastWordPosY, currentWordPosY, posYTolerance)) {
+                    addLine(this.line);
                     line = new PDFLine();
                 }
-
                 line.getWords().add(new TextPositionSequence(textPositions, pageIndex));
                 lastWordPosY = currentWordPosY;
                 super.writeString(text, textPositions);
             }
 
             protected void endPage(PDPage page) throws IOException {
-                pdfPage.getLines().add(this.line);
+                addLine(this.line);
+            }
+
+            private void addLine(PDFLine line) {
+                if (line != null && !line.getWords().isEmpty()) {
+                    pdfPage.getLines().add(line);
+                }
             }
         };
 
@@ -191,7 +196,7 @@ public class PDFTextExtractionUtil {
 
     public static List<TextFinding> getTextFindings(List<TextPositionSequence> textPositions) {
         List<TextFinding> findings = new ArrayList<>();
-        textPositions.stream().forEach(e -> findings.add(new TextFinding(e, TextFinding.TextFindingType.POOR_WORDING)));
+        textPositions.stream().forEach(e -> findings.add(new TextFinding(e)));
         return findings;
     }
 
