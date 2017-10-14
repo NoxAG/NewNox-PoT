@@ -2,6 +2,7 @@ package com.noxag.newnox.pot.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.noxag.newnox.pot.util.data.PDFLine;
 import com.noxag.newnox.pot.util.data.PDFPage;
@@ -37,5 +38,29 @@ public class PDFTextAnalyzerUtil {
             list1.addAll(list2);
             return list1;
         });
+    }
+
+    // @formatter:off
+    public static PDFPage generatePDFPage(Integer pageIndex, List<TextPositionSequence> pageWords) {
+        return new PDFPage(
+                pageWords.stream()
+                .collect(Collectors.groupingBy(TextPositionSequence::getY))
+                .values().stream()
+                .reduce(new ArrayList<PDFLine>(), (lines, words) -> {
+                    lines.add(new PDFLine(words));
+                    return lines;
+                }, (lines1, lines2) -> {
+                    lines1.addAll(lines2);  
+                    return lines1;
+                }).stream()
+                .collect(Collectors.toList()));
+    }
+    // @formatter:on
+
+    public static List<PDFPage> generatePDFPages(List<TextPositionSequence> words) {
+        List<PDFPage> pages = new ArrayList<>();
+        words.stream().collect(Collectors.groupingBy(TextPositionSequence::getPageIndex)).entrySet().stream()
+                .forEach(entry -> pages.add(generatePDFPage(entry.getKey(), entry.getValue())));
+        return pages;
     }
 }

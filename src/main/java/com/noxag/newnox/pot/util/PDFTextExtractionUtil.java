@@ -6,11 +6,9 @@ import java.util.List;
 import java.util.function.Function;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
 
-import com.noxag.newnox.pot.util.data.PDFLine;
 import com.noxag.newnox.pot.util.data.PDFPage;
 import com.noxag.newnox.pot.util.data.TextFinding;
 import com.noxag.newnox.pot.util.data.TextPositionSequence;
@@ -52,50 +50,15 @@ public class PDFTextExtractionUtil {
     }
 
     public static List<PDFPage> getCompleteText(PDDocument document) throws IOException {
-        List<PDFPage> pages = new ArrayList<>();
+        List<TextPositionSequence> words = new ArrayList<>();
         for (int pageNum = 1; pageNum <= document.getNumberOfPages(); pageNum++) {
-            pages.add(getCompleteText(document, pageNum));
+            words.addAll(getCompleteText(document, pageNum));
         }
-        return pages;
+        return PDFTextAnalyzerUtil.generatePDFPages(words);
     }
 
-    public static PDFPage getCompleteText(PDDocument document, int pageIndex) throws IOException {
-        final PDFPage pdfPage = new PDFPage();
-
-        PDFTextStripper stripper = new PDFTextStripper() {
-            PDFLine line = new PDFLine();
-            float lastWordPosY = -1f;
-            float posYTolerance = 0.1f;
-
-            @Override
-            protected void writeString(String text, List<TextPosition> textPositions) throws IOException {
-                float currentWordPosY = textPositions.get(0).getYDirAdj();
-                if (isNextLine(lastWordPosY, currentWordPosY, posYTolerance)) {
-                    addLine(this.line);
-                    line = new PDFLine();
-                }
-                line.getWords().add(new TextPositionSequence(textPositions, pageIndex));
-                lastWordPosY = currentWordPosY;
-                super.writeString(text, textPositions);
-            }
-
-            protected void endPage(PDPage page) throws IOException {
-                addLine(this.line);
-            }
-
-            private void addLine(PDFLine line) {
-                if (line != null && !line.getWords().isEmpty()) {
-                    pdfPage.getLines().add(line);
-                }
-            }
-        };
-
-        runTextStripper(stripper, document, pageIndex);
-        return pdfPage;
-    }
-
-    private static boolean isNextLine(float lastWordPosY, float currentWordPosY, float tolerance) {
-        return !(lastWordPosY <= (currentWordPosY + tolerance) && lastWordPosY >= (currentWordPosY - tolerance));
+    public static List<TextPositionSequence> getCompleteText(PDDocument document, int pageIndex) throws IOException {
+        return findWord(document, pageIndex, e -> 0);
     }
 
     /**

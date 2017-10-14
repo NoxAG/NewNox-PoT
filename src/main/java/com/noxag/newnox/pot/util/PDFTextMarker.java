@@ -38,16 +38,20 @@ public class PDFTextMarker {
 
     public static void addTextMarkup(PDDocument doc, TextPositionSequence annotationPosition, PDColor color,
             String subType) throws IOException {
-
         doc.getPage(annotationPosition.getPageIndex() - 1).getAnnotations()
                 .add(generateTextMarkupAnnotation(annotationPosition, color, subType));
     }
 
     private static PDAnnotation generateTextMarkupAnnotation(TextPositionSequence annotationPosition, PDColor color,
             String subType) {
+        return generateTextMarkupAnnotation(annotationPosition, color, subType, 1f);
+    }
+
+    private static PDAnnotation generateTextMarkupAnnotation(TextPositionSequence annotationPosition, PDColor color,
+            String subType, float opacity) {
         PDAnnotationTextMarkup txtMark = new PDAnnotationTextMarkup(subType);
         txtMark.setColor(color);
-        txtMark.setConstantOpacity(0.3f);
+        txtMark.setConstantOpacity(opacity);
         txtMark.setRectangle(new PDRectangle(annotationPosition.getX(), annotationPosition.getY(),
                 annotationPosition.getWidth(), annotationPosition.getHeight()));
         return txtMark;
@@ -55,9 +59,8 @@ public class PDFTextMarker {
 
     public static void clearDocumentFromTextMarkups(PDDocument doc) {
         try {
-            for (int pageNum = 1; pageNum < doc.getNumberOfPages(); pageNum++) {
-                List<PDAnnotation> pageAnnotations = doc.getPage(pageNum - 1).getAnnotations();
-                pageAnnotations.clear();
+            for (int pageNum = 1; pageNum <= doc.getNumberOfPages(); pageNum++) {
+                doc.getPage(pageNum - 1).getAnnotations().clear();
             }
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "PDF could not acces annotations", e);
